@@ -80,7 +80,7 @@ export PYTHONUNBUFFERED=1
 source /edx/app/edx_ansible/venvs/edx_ansible/bin/activate
 cd /edx/app/edx_ansible/edx_ansible/playbooks
 
-EXTRA_VARS="#{extra_vars_lines} -e EDXAPP_EDXAPP_SECRET_KEY=SET-ME-PLEASE"
+EXTRA_VARS="#{extra_vars_lines} -e EDXAPP_EDXAPP_SECRET_KEY=SET-ME-PLEASE -e edxapp_user=edxapp"
 CONFIG_VER="#{ENV['CONFIGURATION_VERSION'] || openedx_release || 'open-release/juniper.3'}"
 
 ansible-playbook -i localhost, -c local run_role.yml -e role=edx_ansible -e configuration_version=$CONFIG_VER $EXTRA_VARS
