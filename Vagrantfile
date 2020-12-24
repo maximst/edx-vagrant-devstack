@@ -80,18 +80,37 @@ export PYTHONUNBUFFERED=1
 source /edx/app/edx_ansible/venvs/edx_ansible/bin/activate
 cd /edx/app/edx_ansible/edx_ansible/playbooks
 
-EXTRA_VARS="#{extra_vars_lines} -e EDXAPP_EDXAPP_SECRET_KEY=SET-ME-PLEASE -e edxapp_user=edxapp"
+cd /edx/app/ecommerce/ecommerce
+sudo -u ecommerce git init
+sudo -u ecommerce git remote add origin https://github.com/edx/ecommerce.git
+
+cd /edx/app/discovery/discovery
+sudo -u discovery git init
+sudo -u discovery git remote add origin https://github.com/edx/course-discovery.git
+
+EXTRA_VARS="\
+ #{extra_vars_lines}\
+ -e EDXAPP_EDXAPP_SECRET_KEY=SET-ME-PLEASE\
+ -e edxapp_user=edxapp\
+ -e edxapp_data_dir=/edx/var/edxapp\
+ -e common_web_group=www-data\
+ -e DISCOVERY_NGINX_PORT=18381\
+ -e ENTERPRISE_CATALOG_ENABLE_EXPERIMENTAL_DOCKER_SHIM=no\
+ -e edx_django_service_enable_experimental_docker_shim=no\
+ -e@roles/edxapp/defaults/main.yml\
+ -e@roles/common_vars/defaults/main.yml\
+"
 CONFIG_VER="#{ENV['CONFIGURATION_VERSION'] || openedx_release || 'open-release/juniper.3'}"
 
 ansible-playbook -i localhost, -c local run_role.yml -e role=edx_ansible -e configuration_version=$CONFIG_VER $EXTRA_VARS
 
-cp vagrant-analytics.yml vagrant-devstack.yml
+sudo -u edx-ansible cp vagrant-analytics.yml vagrant-devstack.yml
 sudo -u edx-ansible sed -i '/- demo/d' vagrant-devstack.yml
 sudo -u edx-ansible sed -i '/- analytics_api/d' vagrant-devstack.yml
 sudo -u edx-ansible sed -i '/- insights/d' vagrant-devstack.yml
 sudo -u edx-ansible sed -i '/- analytics_pipeline/d' vagrant-devstack.yml
 sudo -u edx-ansible sed -i '13 a \\    DISCOVERY_URL_ROOT: "http://localhost:{{ DISCOVERY_NGINX_PORT }}"' /edx/app/edx_ansible/edx_ansible/playbooks/vagrant-devstack.yml
-echo "    - discovery" | sudo -u edx-ansible tee -a vagrant-devstack.yml
+sudo -u edx-ansible sed -i '35 a \\    - discovery' /edx/app/edx_ansible/edx_ansible/playbooks/vagrant-devstack.yml
 
 ansible-playbook -i localhost, -c local vagrant-devstack.yml -e configuration_version=$CONFIG_VER $EXTRA_VARS
 SCRIPT
