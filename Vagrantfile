@@ -78,7 +78,6 @@ sudo chown vagrant:vagrant -R /home/vagrant
 
 export PYTHONUNBUFFERED=1
 source /edx/app/edx_ansible/venvs/edx_ansible/bin/activate
-cd /edx/app/edx_ansible/edx_ansible/playbooks
 
 cd /edx/app/ecommerce/ecommerce
 sudo -u ecommerce git init
@@ -87,6 +86,8 @@ sudo -u ecommerce git remote add origin https://github.com/edx/ecommerce.git
 cd /edx/app/discovery/discovery
 sudo -u discovery git init
 sudo -u discovery git remote add origin https://github.com/edx/course-discovery.git
+
+cd /edx/app/edx_ansible/edx_ansible/playbooks
 
 EXTRA_VARS="\
  #{extra_vars_lines}\
