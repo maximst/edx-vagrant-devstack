@@ -90,17 +90,19 @@ sudo -u discovery git remote add origin https://github.com/edx/course-discovery.
 cd /edx/app/edx_ansible/edx_ansible/playbooks
 
 EXTRA_VARS="\
- #{extra_vars_lines}\
+ -e@roles/edxapp/defaults/main.yml\
+ -e@roles/common_vars/defaults/main.yml\
  -e EDXAPP_EDXAPP_SECRET_KEY=SET-ME-PLEASE\
  -e edxapp_user=edxapp\
  -e edxapp_data_dir=/edx/var/edxapp\
  -e common_web_group=www-data\
  -e DISCOVERY_NGINX_PORT=18381\
- -e ENTERPRISE_CATALOG_ENABLE_EXPERIMENTAL_DOCKER_SHIM=no\
- -e edx_django_service_enable_experimental_docker_shim=no\
- -e@roles/edxapp/defaults/main.yml\
- -e@roles/common_vars/defaults/main.yml\
+ -e ENTERPRISE_CATALOG_ENABLE_EXPERIMENTAL_DOCKER_SHIM=false\
+ -e edx_django_service_enable_experimental_docker_shim=false\
 "
+
+EXTRA_VARS=$EXTRA_VARS" #{extra_vars_lines}"
+
 CONFIG_VER="#{ENV['CONFIGURATION_VERSION'] || openedx_release || 'open-release/juniper.3'}"
 
 ansible-playbook -i localhost, -c local run_role.yml -e role=edx_ansible -e configuration_version=$CONFIG_VER $EXTRA_VARS
