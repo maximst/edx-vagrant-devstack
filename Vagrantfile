@@ -23,6 +23,15 @@ VERSION_VARS = [
     'ECOMMERCE_VERSION',
     'ECOMMERCE_WORKER_VERSION',
     'DISCOVERY_VERSION',
+    'CONFIGURATION_VERSION',
+    'EDX_PLATFORM_VERSION',
+    'CERTS_VERSION',
+    'FORUM_VERSION',
+    'DEMO_VERSION',
+    'THEMES_VERSION',
+    'ACCOUNT_MFE_VERSION',
+    'GRADEBOOK_MFE_VERSION',
+    'PROFILE_MFE_VERSION',
 ]
 
 MOUNT_DIRS = {
@@ -52,11 +61,17 @@ openedx_releases = {
   },
   "open-release/juniper.3" => {
     :name => "edx-vagrant", :file => "juniper-rg.box",
+  },
+  "open-release/koa.1" => {
+    :name => "edx-vagrant", :file => "edx-platform-koa.box",
+  },
+  "open-release/koa.2" => {
+    :name => "edx-vagrant", :file => "edx-platform-koa.box",
   }
 }
-#openedx_releases.default = "open-release/juniper.3"
+#openedx_releases.default = "open-release/koa.2"
 
-openedx_release = ENV['OPENEDX_RELEASE'] || 'open-release/juniper.3'
+openedx_release = ENV['OPENEDX_RELEASE'] || 'open-release/koa.2'
 boxname = ENV['OPENEDX_BOXNAME']
 
 # Build -e override lines for each overridable variable.
@@ -64,7 +79,7 @@ extra_vars_lines = ""
 VERSION_VARS.each do |var|
   rel = ENV[var.upcase] || openedx_release
   if rel
-    extra_vars_lines += "-e #{var}=#{rel} \\\n"
+    extra_vars_lines += "-e #{var}='#{rel}' \\\n"
   end
 end
 
@@ -75,6 +90,7 @@ if [ ! -d /edx/app/edx_ansible ]; then
 fi
 
 sudo chown vagrant:vagrant -R /home/vagrant
+sudo chown edx-ansible:edx-ansible -R /edx/app/edx_ansible
 
 export PYTHONUNBUFFERED=1
 source /edx/app/edx_ansible/venvs/edx_ansible/bin/activate
@@ -86,6 +102,9 @@ sudo -u ecommerce git remote add origin https://github.com/edx/ecommerce.git
 cd /edx/app/discovery/discovery
 sudo -u discovery git init
 sudo -u discovery git remote add origin https://github.com/edx/course-discovery.git
+
+cd /edx/app/edx_ansible/edx_ansible
+sudo -u edx-ansible git checkout #{openedx_release}
 
 cd /edx/app/edx_ansible/edx_ansible/playbooks
 
@@ -103,9 +122,13 @@ EXTRA_VARS="\
 
 EXTRA_VARS=$EXTRA_VARS" #{extra_vars_lines}"
 
-CONFIG_VER="#{ENV['CONFIGURATION_VERSION'] || openedx_release || 'open-release/juniper.3'}"
+CONFIG_VER="#{ENV['CONFIGURATION_VERSION'] || openedx_release || 'open-release/koa.2'}"
 
-ansible-playbook -i localhost, -c local run_role.yml -e role=edx_ansible -e configuration_version=$CONFIG_VER $EXTRA_VARS
+echo "#######################################################"
+echo $EXTRA_VARS
+echo "#######################################################"
+
+ansible-playbook -i localhost, -c local run_role.yml -e role=edx_ansible -e configuration_version=$CONFIG_VER $EXTRA_VARS 
 
 sudo -u edx-ansible cp vagrant-analytics.yml vagrant-devstack.yml
 sudo -u edx-ansible sed -i '/- demo/d' vagrant-devstack.yml
@@ -114,8 +137,12 @@ sudo -u edx-ansible sed -i '/- insights/d' vagrant-devstack.yml
 sudo -u edx-ansible sed -i '/- analytics_pipeline/d' vagrant-devstack.yml
 sudo -u edx-ansible sed -i '13 a \\    DISCOVERY_URL_ROOT: "http://localhost:{{ DISCOVERY_NGINX_PORT }}"' /edx/app/edx_ansible/edx_ansible/playbooks/vagrant-devstack.yml
 sudo -u edx-ansible sed -i '35 a \\    - discovery' /edx/app/edx_ansible/edx_ansible/playbooks/vagrant-devstack.yml
-
+ 
 ansible-playbook -i localhost, -c local vagrant-devstack.yml -e configuration_version=$CONFIG_VER $EXTRA_VARS
+
+sudo service supervisor stop
+sudo systemctl disable supervisor
+
 SCRIPT
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
@@ -136,7 +163,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Creates an edX devstack VM from an official release
   config.vm.box     = boxname
-  config.vm.box_url = "https://raccoongang-share.s3-eu-west-1.amazonaws.com/vagrant-boxes/#{boxfile}"
+  config.vm.box_url = "https://files.slack.com/files-pri/T042XMW6N-F01T8UNAKA4/download/#{boxfile}?pub_secret=6fb01420c2"
   config.vm.box_check_update = false
 
   config.vm.network :private_network, ip: "192.168.33.10"
